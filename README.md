@@ -18,7 +18,6 @@ Cerințe: **JDK 17+** (testat cu JDK 21). Fără dependențe externe.
 ```
 game-of-life/
 ├── README.md
-├── GIT_WORKFLOW.md            <- cum lucrați în 3 pe Git
 ├── build.sh / build.bat       <- compilare
 ├── run.sh / run.bat           <- rulare
 └── src/gol/
@@ -109,7 +108,6 @@ Parametri opționali (`cheie=valoare`, la sfârșitul comenzii), de exemplu:
 | Oprirea simulării | `volatile boolean stopping` + `Thread.interrupt()` | firele blocate în `sleep`/`tryAcquire`/`await` ies cu `InterruptedException` |
 | Starea unei celule (`meals`) | nesincronizată, intenționat | e atinsă doar de firul propriu (confinare la fir) |
 
-**Cum știm că e corect:** la final, după ce toate firele s-au oprit, `Simulation` verifică două invarianți și programul iese cu cod 0 doar dacă ambii se păstrează:
 
 1. **Conservarea hranei:** `hrană_inițială + hrană_eliberată − mese == hrană_rămasă`
 2. **Conservarea celulelor:** `născute == moarte + divizate + prăbușite + oprite_de_simulare`
