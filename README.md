@@ -95,15 +95,6 @@ Parametri opționali (`cheie=valoare`, la sfârșitul comenzii), de exemplu:
 | Sexuate: caută altă celulă, rezultă o a treia, inițial flămândă | `MatingPool.seekPartner`: a doua venită (LEADER) creează copilul |
 | Celulele = fire distincte | `Cell extends Thread` |
 
-### Decizii de interpretare (le puteți schimba, dar știți de ce le-am luat așa)
-
-- **Celulele se nasc flămânde** și au T_starve să găsească hrană.
-- **T_starve se numără de la sfârșitul lui T_full** (adică din momentul în care îi e din nou foame).
-- **Hrana mâncată dispare.** Singura sursă nouă de hrană e moartea unei celule (1–5 unități). Fiind vorba de resurse limitate, populația crește cât timp e hrană, apoi se prăbușește; de aceea simularea se oprește și la extincție (vezi rularea implicită a variantei corecte: ~7 secunde). Pentru o rulare mai lungă: `food=5000` sau mai mult.
-- **Diviziune:** celula mamă încetează să existe, apar două fiice flămânde cu contorul de mese la 0.
-- **Reproducere sexuată:** ambii părinți supraviețuiesc, contorul lor de mese revine la 0, copilul se naște flămând. Dacă nu își găsesc partener până expiră T_full, reîncearcă în ciclul următor.
-- **Plafon de populație** (`max`, implicit 400): protejează mașina de o explozie de fire. La plafon, celulele pur și simplu nu se mai înmulțesc.
-- Timpii sunt scalați în milisecunde ca simularea să dureze secunde.
 
 ## Varianta corectă (`gol.correct`)
 
@@ -149,20 +140,3 @@ Despre `Racy.window()`: bugurile există și fără ea (un `++` nesincronizat nu
 | `livelock` | `LivelockMatingPool` | perechile se „cedează politicos” la infinit (fiecare ține lock-ul propriu, încearcă pe al celuilalt, eșuează, eliberează, repetă) | firele sunt active (milioane de reîncercări), dar `imperecheri = 0` pentru totdeauna |
 | `contention` | `BigLockFoodPool` | secțiune critică prea lungă (sleep sub `synchronized`), lock grosier, `notifyAll()` | cu ~1 milion de unități de hrană în rezervor, sute de celule mor de foame așteptând la lock; ~310 mese/s față de ~3900 în varianta corectă cu aceiași parametri |
 
-Reparații (de știut pentru întrebări): ordine globală unică de luare a lock-urilor sau eliminarea celui de-al doilea lock (`LongAdder` în loc de registru sub lock); back-off aleator sau arbitru cu ordine fixă (de exemplu după id) pentru livelock; „mestecatul” în afara lock-ului, `Semaphore` sau `Lock/Condition` cu `signal()` în loc de `notifyAll()` pentru contenție.
-
-## Întrebări posibile la laborator
-
-1. **Data race vs. race condition?** Data race = acces concurent la aceeași locație, cel puțin o scriere, fără sincronizare (formal, în JMM). Race condition = corectitudinea depinde de ordinea intercalării; poți avea race condition și cu toate accesele sub lock, dacă lock-ul nu acoperă întreaga secvență logică.
-2. **De ce nu ajunge `volatile` pe un contor?** `volatile` dă vizibilitate, nu atomicitate; `count++` rămâne citire + adunare + scriere. Se folosesc `AtomicLong`/`LongAdder` sau un lock.
-3. **De ce `LongAdder` și nu `AtomicLong`?** Sub contenție mare, `LongAdder` împarte contorul în celule și le adună la citire, deci scalează mai bine; ne convine pentru că scriem des și citim rar.
-4. **Cele 4 condiții Coffman?** Excludere mutuală, hold-and-wait, fără preemptiune, așteptare circulară. Ruperea uneia previne deadlock-ul; noi o rupem pe ultima, cu ordine globală de lock-uri.
-5. **Deadlock vs. livelock vs. starvation?** Deadlock: firele sunt blocate și nu mai avansează. Livelock: firele rulează, dar fără progres. Starvation: un fir nu primește resursa pentru că alții o iau mereu (de aceea `Semaphore` e `fair`).
-6. **De ce `interrupt()` pentru oprire?** Firele dorm sau așteaptă hrană; un simplu flag nu le-ar trezi. Atenție: așteptarea la intrarea într-un `synchronized` nu poate fi întreruptă (de aceea, în deadlock, firele rămân blocate); `ReentrantLock.lockInterruptibly()` / `tryLock(timeout)` rezolvă asta.
-7. **De ce `withdraw()` în `SafeMatingPool`?** Timeout-ul poate expira exact când sosește partenerul. Doar sub lock putem decide cine a câștigat cursa.
-8. **De ce ciclu CAS în `Colony.trySpawn`?** Verificarea plafonului și rezervarea locului trebuie să fie atomice împreună; altfel două diviziuni simultane ar putea depăși plafonul.
-9. **Un fir per celulă: scalează?** Nu la sute de mii; de aceea plafonul. Alternative: thread pool cu task-uri programate, sau virtual threads (Java 21), care fac firele per celulă ieftine.
-
-## Împărțirea muncii în echipă
-
-Vezi [`GIT_WORKFLOW.md`](GIT_WORKFLOW.md).
