@@ -1,0 +1,16 @@
+# artefacte de compilare
+out/
+sources.txt
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# sistem
+.DS_Store
+Thumbs.db
